@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<title>MediBox — home medicine expiry tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+
+    --ink: #1A231F;
+    --ink-soft: #56655D;
+    --ink-faint: #8B978F;
+    --bg: #ECF1EC;
+    --surface: #FFFFFF;
+    --line: #D8E1DA;
+    --pine: #1F5D4E;
+    --pine-strong: #16453A;
+    --pine-soft: #E1EEE7;
+    --amber: #A0650C;
+    --amber-soft: #FAEAD1;
+    --brick: #A23F27;
+    --brick-soft: #F6E1DA;
+    --shadow-modal: 0 24px 60px rgba(15, 24, 19, 0.28);
+    --radius-s: 8px;
+    --radius-m: 14px;
+    --radius-l: 20px;
+    --font-head: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-body: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --ink: #E8EFE9;
+      --ink-soft: #9FAFA6;
+      --ink-faint: #67766E;
+      --bg: #10140F;
+      --surface: #181F1A;
+      --line: #2B342D;
+      --pine: #55B692;
+      --pine-strong: #7BCBAD;
+      --pine-soft: #1C3B30;
+      --amber: #E6AC46;
+      --amber-soft: #3B2C14;
+      --brick: #E4805F;
+      --brick-soft: #3C2119;
+      --shadow-modal: 0 24px 60px rgba(0,0,0,0.55);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ink: #E8EFE9;
+    --ink-soft: #9FAFA6;
+    --ink-faint: #67766E;
+    --bg: #10140F;
+    --surface: #181F1A;
+    --line: #2B342D;
+    --pine: #55B692;
+    --pine-strong: #7BCBAD;
+    --pine-soft: #1C3B30;
+    --amber: #E6AC46;
+    --amber-soft: #3B2C14;
+    --brick: #E4805F;
+    --brick-soft: #3C2119;
+    --shadow-modal: 0 24px 60px rgba(0,0,0,0.55);
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] { color-scheme: light; }
+
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15.5px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  img { max-width: 100%; display: block; }
+  button, input, select, textarea { font-family: inherit; font-size: inherit; color: inherit; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 28px 20px 56px; }
+
+  /* Header */
+  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 22px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .mark { flex: none; }
+  .brand-text h1 { font-family: var(--font-head); font-size: 22px; font-weight: 700; margin: 0 0 2px; letter-spacing: -0.01em; }
+  .brand-text .tag { margin: 0; color: var(--ink-soft); font-size: 13.5px; max-width: 34ch; }
+  .top-actions { display: flex; gap: 6px; padding-top: 2px; }
+  .icon-btn { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; line-height: 1; }
+  .icon-btn:hover { background: var(--pine-soft); border-color: var(--pine); }
+  .icon-btn.small { width: 30px; height: 30px; border-radius: 8px; }
+
+  /* Identity / sync status */
+  .identity-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; font-size: 12.5px; color: var(--ink-soft); flex-wrap: wrap; }
+  .identity-avatar { width: 20px; height: 20px; border-radius: 50%; flex: none; }
+  .identity-name { font-weight: 600; color: var(--ink); }
+  .identity-sync { color: var(--pine); font-weight: 600; }
+  .identity-sync::before { content: '●'; font-size: 8px; margin-right: 5px; vertical-align: 1px; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .stat-tile { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-m); padding: 14px 16px; box-shadow: inset 0 1px 2px rgba(0,0,0,.04); display: flex; flex-direction: column; gap: 6px; }
+  .stat-num { font-family: var(--font-mono); font-weight: 600; font-size: 26px; line-height: 1; }
+  .stat-label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--ink-soft); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+  .dot-ink { background: var(--ink-faint); }
+  .dot-brick { background: var(--brick); }
+  .dot-amber { background: var(--amber); }
+  .dot-pine { background: var(--pine); }
+
+  /* Alert banner */
+  .alert-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; border-radius: var(--radius-m); padding: 13px 16px; margin-bottom: 16px; border-left: 4px solid var(--brick); background: var(--brick-soft); }
+  .alert-banner.amber-tone { border-left-color: var(--amber); background: var(--amber-soft); }
+  .alert-text { font-size: 14px; }
+  .link-btn { background: none; border: none; padding: 0; color: var(--pine-strong); font-weight: 600; text-decoration: underline; cursor: pointer; font-size: 14px; white-space: nowrap; }
+
+  /* Toolbar */
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 18px; }
+  .search-box { display: flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius-s); padding: 0 12px; flex: 1 1 200px; height: 40px; color: var(--ink-soft); }
+  .search-box input { border: none; outline: none; background: none; flex: 1; height: 100%; color: var(--ink); }
+  .search-box input::placeholder { color: var(--ink-faint); }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip { border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft); padding: 8px 13px; border-radius: 999px; font-size: 13px; cursor: pointer; }
+  .chip.active { background: var(--pine); border-color: var(--pine); color: #fff; }
+  #categoryFilter { border: 1px solid var(--line); background: var(--surface); border-radius: var(--radius-s); height: 40px; padding: 0 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 8px; border-radius: var(--radius-s); padding: 10px 16px; font-size: 14px; font-weight: 600; cursor: pointer; border: 1px solid transparent; white-space: nowrap; }
+  .btn.primary { background: var(--pine); color: #fff; }
+  .btn.primary:hover { background: var(--pine-strong); }
+  .btn.ghost { background: var(--surface); border-color: var(--line); color: var(--ink); }
+  .btn.ghost:hover { background: var(--pine-soft); }
+  .btn.danger-ghost { background: var(--surface); border-color: var(--brick); color: var(--brick); }
+  .btn.danger-ghost:hover { background: var(--brick-soft); }
+  .btn.small { padding: 7px 12px; font-size: 13px; }
+
+  /* List */
+  .list { border: 1px solid var(--line); border-radius: var(--radius-m); overflow: hidden; background: var(--surface); }
+  .row { display: flex; align-items: center; gap: 14px; padding: 14px 16px; border-left: 4px solid transparent; border-bottom: 1px solid var(--line); }
+  .row:last-child { border-bottom: none; }
+  .row.status-expired { border-left-color: var(--brick); }
+  .row.status-warning { border-left-color: var(--amber); }
+  .row.status-safe { border-left-color: var(--pine); }
+  .row-thumb { width: 44px; height: 44px; border-radius: 10px; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 20px; flex: none; overflow: hidden; }
+  .row-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .row-main { flex: 1 1 160px; min-width: 0; }
+  .row-name { margin: 0 0 4px; font-family: var(--font-head); font-size: 15.5px; font-weight: 600; overflow-wrap: anywhere; }
+  .row-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .tag { font-size: 11.5px; color: var(--ink-soft); background: var(--bg); border: 1px solid var(--line); padding: 2px 8px; border-radius: 999px; }
+  .row-qty { font-size: 12.5px; color: var(--ink-soft); }
+  .row-notes { margin: 6px 0 0; font-size: 12.5px; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .row-expiry { text-align: right; flex: none; display: flex; flex-direction: column; gap: 3px; }
+  .row-date { font-family: var(--font-mono); font-size: 13px; color: var(--ink-soft); white-space: nowrap; }
+  .row-days { font-size: 12.5px; font-weight: 600; padding: 2px 9px; border-radius: 999px; white-space: nowrap; }
+  .badge-expired { color: var(--brick); background: var(--brick-soft); }
+  .badge-warning { color: var(--amber); background: var(--amber-soft); }
+  .badge-safe { color: var(--pine); background: var(--pine-soft); }
+  .row-actions { display: flex; gap: 2px; flex: none; }
+  .row-actions button { background: none; border: none; cursor: pointer; font-size: 15px; width: 30px; height: 30px; border-radius: 8px; }
+  .row-actions button:hover { background: var(--bg); }
+
+  @keyframes rowFlash { from { background: var(--pine-soft); } to { background: var(--surface); } }
+  .row.just-changed { animation: rowFlash 1.3s ease-out; }
+
+  /* Empty state */
+  .empty { border: 1px dashed var(--line); border-radius: var(--radius-m); padding: 44px 20px; text-align: center; color: var(--ink-soft); }
+  .empty p { margin: 0; }
+  .empty-actions { display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+
+  /* Footer */
+  .foot { margin-top: 28px; }
+  .foot p { font-size: 12px; color: var(--ink-faint); max-width: 64ch; }
+
+  /* Overlays / modal */
+  .overlay { position: fixed; inset: 0; background: rgba(10,14,11,.5); display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; transition: opacity .18s ease; z-index: 60; }
+  .overlay.open { opacity: 1; }
+  .overlay[hidden] { display: none; }
+  .modal { background: var(--surface); border-radius: var(--radius-l); padding: 22px; width: 100%; max-width: 440px; box-shadow: var(--shadow-modal); transform: translateY(10px) scale(.98); transition: transform .18s ease; max-height: 88vh; overflow-y: auto; }
+  .overlay.open .modal { transform: translateY(0) scale(1); }
+  .modal.small { max-width: 380px; }
+  .modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+  .modal h2 { font-family: var(--font-head); font-size: 18px; margin: 0; }
+  .modal p.lead { font-size: 14px; color: var(--ink-soft); }
+
+  /* Form */
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+  .field .opt { font-weight: 400; color: var(--ink-faint); }
+  .field input, .field select { width: 100%; border: 1px solid var(--line); background: var(--bg); border-radius: var(--radius-s); padding: 9px 11px; }
+  .field input:focus, .field select:focus { border-color: var(--pine); }
+  .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .field-hint { font-size: 12.5px; color: var(--ink-soft); margin: 4px 0 0; }
+  .field-title { font-size: 13.5px; font-weight: 600; margin: 0 0 2px; }
+  .field-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 13px 0; border-top: 1px solid var(--line); }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 6px; }
+  .photo-row { display: flex; align-items: center; gap: 12px; }
+  .photo-preview { width: 56px; height: 56px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line); display: flex; align-items: center; justify-content: center; overflow: hidden; flex: none; }
+  .photo-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .photo-placeholder { font-size: 9.5px; color: var(--ink-faint); text-align: center; }
+  .photo-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  .file-btn { cursor: pointer; }
+
+  /* Toast */
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(8px); background: var(--ink); color: var(--bg); padding: 11px 18px; border-radius: 999px; font-size: 13.5px; opacity: 0; transition: opacity .2s ease, transform .2s ease; z-index: 80; max-width: 90vw; text-align: center; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast[hidden] { display: none; }
+
+  :focus-visible { outline: 2px solid var(--pine); outline-offset: 2px; }
+
+  @media (max-width: 640px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .row { flex-wrap: wrap; }
+    .row-expiry { text-align: left; align-items: flex-start; margin-left: 58px; }
+    .row-actions { margin-left: 58px; }
+    .field-grid { grid-template-columns: 1fr; }
+    .brand-text .tag { max-width: 22ch; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <span class="mark" aria-hidden="true">
+        <svg width="30" height="30" viewBox="0 0 32 32">
+          <g transform="rotate(-40 16 16)">
+            <rect x="4" y="11" width="24" height="10" rx="5" fill="var(--pine-soft)" stroke="var(--pine)" stroke-width="1"/>
+            <path d="M16 11h7a5 5 0 0 1 0 10h-7z" fill="var(--pine)"/>
+          </g>
+        </svg>
+      </span>
+      <div class="brand-text">
+        <h1>MediBox</h1>
+        <p class="tag">Know what's safe in your medicine box before it's too late.</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button type="button" class="icon-btn" id="themeBtn" aria-label="Toggle theme"></button>
+      <button type="button" class="icon-btn" id="notifyBtn" aria-label="Toggle browser reminders"></button>
+      <button type="button" class="icon-btn" id="settingsBtn" aria-label="Settings">⚙️</button>
+    </div>
+  </header>
+
+  <div id="identityBar" class="identity-bar" hidden></div>
+
+  <section class="stats" aria-label="Medicine box summary">
+    <div class="stat-tile">
+      <span class="stat-num" id="statTotal">0</span>
+      <span class="stat-label"><span class="dot dot-ink"></span>Total medicines</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-num" id="statExpired">0</span>
+      <span class="stat-label"><span class="dot dot-brick"></span>Expired</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-num" id="statWarning">0</span>
+      <span class="stat-label"><span class="dot dot-amber"></span>Expiring soon</span>
+    </div>
+    <div class="stat-tile">
+      <span class="stat-num" id="statSafe">0</span>
+      <span class="stat-label"><span class="dot dot-pine"></span>Safe</span>
+    </div>
+  </section>
+
+  <div id="alertBanner" class="alert-banner" role="status" aria-live="polite" hidden></div>
+
+  <section class="toolbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><line x1="20" y1="20" x2="15.5" y2="15.5"/></svg>
+      <input type="search" id="searchInput" placeholder="Search medicines" aria-label="Search medicines">
+    </div>
+    <div class="chips" id="statusChips" role="group" aria-label="Filter by status">
+      <button type="button" class="chip active" data-status="all">All</button>
+      <button type="button" class="chip" data-status="expired">Expired</button>
+      <button type="button" class="chip" data-status="warning">Expiring soon</button>
+      <button type="button" class="chip" data-status="safe">Safe</button>
+    </div>
+    <select id="categoryFilter" aria-label="Filter by category">
+      <option value="all">All categories</option>
+      <option value="tablet">Tablet / Capsule</option>
+      <option value="syrup">Syrup / Liquid</option>
+      <option value="ointment">Ointment / Cream</option>
+      <option value="injection">Injection</option>
+      <option value="drops">Drops</option>
+      <option value="other">Other</option>
+    </select>
+    <button type="button" class="btn primary" id="addBtn">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add medicine
+    </button>
+  </section>
+
+  <section id="listSection" aria-label="Medicine list">
+    <div id="emptyState" class="empty" hidden></div>
+    <div id="list" class="list"></div>
+  </section>
+
+  <footer class="foot">
+    <p>MediBox is a working design-thinking prototype. It's a personal record, not medical advice — always check the printed label and ask a pharmacist before using any medicine.</p>
+  </footer>
+</div>
+
+<!-- Add / Edit modal -->
+<div id="modalOverlay" class="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-head">
+      <h2 id="modalTitle">Add medicine</h2>
+      <button type="button" class="icon-btn small" id="modalCloseX" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="5" y1="19" x2="19" y2="5"/></svg>
+      </button>
+    </div>
+    <form id="medForm" novalidate>
+      <div class="field">
+        <label for="medName">Medicine name</label>
+        <input type="text" id="medName" required placeholder="e.g. Paracetamol 500mg">
+      </div>
+      <div class="field-grid">
+        <div class="field">
+          <label for="medCategory">Type</label>
+          <select id="medCategory">
+            <option value="tablet">Tablet / Capsule</option>
+            <option value="syrup">Syrup / Liquid</option>
+            <option value="ointment">Ointment / Cream</option>
+            <option value="injection">Injection</option>
+            <option value="drops">Drops</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="medExpiry">Expiry date</label>
+          <input type="date" id="medExpiry" required>
+        </div>
+      </div>
+      <div class="field">
+        <label for="medQuantity">Quantity <span class="opt">(optional)</span></label>
+        <input type="text" id="medQuantity" placeholder="e.g. 8 tablets left">
+      </div>
+      <div class="field">
+        <label for="medNotes">Notes <span class="opt">(optional)</span></label>
+        <input type="text" id="medNotes" placeholder="e.g. Take after food">
+      </div>
+      <div class="field">
+        <label id="photoLabel">Photo <span class="opt">(optional)</span></label>
+        <div class="photo-row">
+          <div class="photo-preview" id="photoPreview"><span class="photo-placeholder">No photo</span></div>
+          <div class="photo-actions">
+            <label class="btn ghost small file-btn" for="medPhotoInput">📷 Add photo</label>
+            <input type="file" id="medPhotoInput" accept="image/*" capture="environment" hidden aria-labelledby="photoLabel">
+            <button type="button" class="btn ghost small" id="removePhotoBtn" hidden>Remove photo</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn ghost" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn primary">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          <span id="saveBtnText">Add medicine</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Confirm dialog -->
+<div id="confirmOverlay" class="overlay" hidden>
+  <div class="modal small" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <div class="modal-head">
+      <h2 id="confirmTitle">Are you sure?</h2>
+    </div>
+    <p class="lead" id="confirmText"></p>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="confirmCancel">Cancel</button>
+      <button type="button" class="btn danger-ghost" id="confirmDelete">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings -->
+<div id="settingsOverlay" class="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+    <div class="modal-head">
+      <h2 id="settingsTitle">Settings</h2>
+      <button type="button" class="icon-btn small" id="settingsCloseX" aria-label="Close">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="5" y1="5" x2="19" y2="19"/><line x1="5" y1="19" x2="19" y2="5"/></svg>
+      </button>
+    </div>
+    <div class="field">
+      <label for="thresholdInput">Remind me this many days before expiry</label>
+      <input type="number" id="thresholdInput" min="1" max="365" step="1">
+      <p class="field-hint">Medicines inside this window are marked "expiring soon".</p>
+    </div>
+    <div class="field-row">
+      <div>
+        <p class="field-title">Sample medicine box</p>
+        <p class="field-hint">Reload 15 example medicines to see MediBox in action.</p>
+      </div>
+      <button type="button" class="btn ghost small" id="loadSampleBtn">Load sample</button>
+    </div>
+    <div class="field-row">
+      <div>
+        <p class="field-title">Clear all data</p>
+        <p class="field-hint">Remove every medicine you've added. This can't be undone.</p>
+      </div>
+      <button type="button" class="btn danger-ghost small" id="clearAllBtn">Clear all</button>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn primary" id="closeSettingsBtn">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var LS_MED = 'medibox_medicines_v1';
+  var LS_SETTINGS = 'medibox_settings_v1';
+  var LS_INIT = 'medibox_initialized_v1';
+  var LS_THEME = 'medibox_theme_v1';
+  var LS_NOTIFY_DATE = 'medibox_last_notified_v1';
+
+  var CATEGORIES = {
+    tablet: { label: 'Tablet / Capsule', emoji: '💊' },
+    syrup: { label: 'Syrup / Liquid', emoji: '🧴' },
+    ointment: { label: 'Ointment / Cream', emoji: '🩹' },
+    injection: { label: 'Injection', emoji: '💉' },
+    drops: { label: 'Drops', emoji: '💧' },
+    other: { label: 'Other', emoji: '📦' }
+  };
+
+  var ICON_SUN = '<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.6M12 18.9v2.6M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12h2.6M18.9 12h2.6M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/></svg>';
+  var ICON_MOON = '<svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" stroke="none"><path d="M20.5 14.4A8.5 8.5 0 1 1 9.6 3.5a7 7 0 0 0 10.9 10.9Z"/></svg>';
+
+  var state = {
+    medicines: [],
+    settings: { thresholdDays: 30 },
+    filters: { search: '', status: 'all', category: 'all' },
+    editingId: null,
+    pendingPhoto: null,
+    theme: null
+  };
+
+  var els = {};
+  var confirmCallback = null;
+  var toastTimer = null;
+
+  function $(id) { return document.getElementById(id); }
+
+  function cacheEls() {
+    [
+      'identityBar','themeBtn','notifyBtn','settingsBtn','statTotal','statExpired','statWarning','statSafe',
+      'alertBanner','searchInput','statusChips','categoryFilter','addBtn','emptyState','list','listSection',
+      'settingsOverlay','thresholdInput','loadSampleBtn','clearAllBtn','closeSettingsBtn','settingsCloseX',
+      'modalOverlay','medForm','modalTitle','medName','medCategory','medQuantity','medExpiry','medNotes',
+      'medPhotoInput','photoPreview','removePhotoBtn','cancelBtn','modalCloseX','saveBtnText',
+      'confirmOverlay','confirmText','confirmCancel','confirmDelete','toast'
+    ].forEach(function (id) { els[id] = $(id); });
+  }
+
+  /* ---------- date + status helpers ---------- */
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+
+  function toLocalISODate(d) {
+    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+  }
+
+  function parseLocalDate(dateStr) {
+    return new Date(dateStr + 'T00:00:00');
+  }
+
+  function addDays(n) {
+    var d = new Date();
+    d.setDate(d.getDate() + n);
+    return toLocalISODate(d);
+  }
+
+  function daysUntil(dateStr) {
+    var today = new Date();
+    today.setHours(0, 0, 0, 0);
+    var expiry = parseLocalDate(dateStr);
+    return Math.round((expiry - today) / 86400000);
+  }
+
+  function getStatus(dateStr) {
+    var d = daysUntil(dateStr);
+    if (d < 0) return 'expired';
+    if (d <= state.settings.thresholdDays) return 'warning';
+    return 'safe';
+  }
+
+  function formatDaysLabel(d) {
+    if (d === 0) return 'Expires today';
+    if (d === 1) return 'Expires tomorrow';
+    if (d > 1) return 'Expires in ' + d + ' days';
+    if (d === -1) return 'Expired yesterday';
+    return 'Expired ' + Math.abs(d) + ' days ago';
+  }
+
+  function formatDate(dateStr) {
+    return parseLocalDate(dateStr).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+
+  function makeId() {
+    return 'm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str).replace(/[&<>"']/g, function (s) {
+      return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[s];
+    });
+  }
+
+  /* ---------- identity + storage ---------- */
+  /* Cloud mode: each signed-in viewer's medicines live in their own
+     private db document (data/users/<their id>/medibox), so the same
+     published link shows each person only their own box, synced across
+     their devices. If the runtime, capability, or an identity isn't
+     available on this view (a downloaded copy, an unsupported host, a
+     signed-out visitor), everything falls back to this device's
+     localStorage exactly as before. */
+
+  var cloud = { available: false, uid: null, me: null, docRef: null, unsubscribe: null };
+
+  function hasClaudeRuntime() {
+    return !!(window.claude && typeof window.claude.use === 'function');
+  }
+
+  function initCloud() {
+    if (!hasClaudeRuntime()) return Promise.resolve(false);
+    return Promise.all([
+      window.claude.use('user').catch(function () { return null; }),
+      window.claude.use('db').catch(function () { return null; })
+    ]).then(function (results) {
+      var userCap = results[0], dbCap = results[1];
+      if (!userCap || !dbCap) return false;
+      return userCap.me().then(function (me) {
+        if (!me || !me.id) return false;
+        cloud.available = true;
+        cloud.uid = me.id;
+        cloud.me = me;
+        cloud.docRef = dbCap.doc('data/users/' + me.id + '/medibox');
+        return true;
+      });
+    }).catch(function () { return false; });
+  }
+
+  function persist() {
+    if (cloud.available && cloud.docRef) {
+      return cloud.docRef.set({ medicines: state.medicines, settings: state.settings }).catch(function () {
+        toast('Could not sync your changes — check your connection.');
+      });
+    }
+    try { localStorage.setItem(LS_MED, JSON.stringify(state.medicines)); }
+    catch (e) { toast('Could not save — your browser storage may be full.'); }
+    try { localStorage.setItem(LS_SETTINGS, JSON.stringify(state.settings)); } catch (e) {}
+  }
+
+  function loadMedicinesLocal() {
+    try {
+      var raw = localStorage.getItem(LS_MED);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+  function loadSettingsLocal() {
+    try {
+      var raw = localStorage.getItem(LS_SETTINGS);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  function renderIdentityBadge(mode) {
+    els.identityBar.hidden = false;
+    els.identityBar.innerHTML = '';
+    if (mode === 'cloud' && cloud.me) {
+      var img = document.createElement('img');
+      img.className = 'identity-avatar';
+      img.alt = '';
+      img.src = cloud.me.avatarUrl;
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'identity-name';
+      nameSpan.textContent = cloud.me.name || 'you';
+      var syncSpan = document.createElement('span');
+      syncSpan.className = 'identity-sync';
+      syncSpan.textContent = 'Synced to your account';
+      els.identityBar.appendChild(img);
+      els.identityBar.appendChild(nameSpan);
+      els.identityBar.appendChild(syncSpan);
+    } else {
+      var span = document.createElement('span');
+      span.textContent = "Saved on this device only — sign-in sync isn't available here.";
+      els.identityBar.appendChild(span);
+    }
+  }
+
+  function showInitialLoading() {
+    els.emptyState.hidden = false;
+    els.emptyState.innerHTML = '<div class="empty-inner"><p>Loading your medicines…</p></div>';
+    els.list.innerHTML = '';
+  }
+
+  function startCloudSubscription() {
+    cloud.unsubscribe = cloud.docRef.onSnapshot(function (snap) {
+      if (snap.exists) {
+        var data = snap.data() || {};
+        state.medicines = Array.isArray(data.medicines) ? data.medicines : [];
+        state.settings = (data.settings && data.settings.thresholdDays) ? data.settings : { thresholdDays: 30 };
+      } else {
+        state.medicines = sampleData();
+        state.settings = { thresholdDays: 30 };
+        persist();
+      }
+      render();
+      maybeNotify();
+    }, function () {
+      cloud.available = false;
+      toast('Live sync is unavailable right now — continuing on this device only.');
+      renderIdentityBadge('local');
+      loadLocalAndRender();
+    });
+  }
+
+  function loadLocalAndRender() {
+    var savedSettings = loadSettingsLocal();
+    state.settings = (savedSettings && savedSettings.thresholdDays) ? savedSettings : { thresholdDays: 30 };
+    var initialized = false;
+    try { initialized = localStorage.getItem(LS_INIT) === '1'; } catch (e) {}
+    if (!initialized) {
+      state.medicines = sampleData();
+      persist();
+      try { localStorage.setItem(LS_INIT, '1'); } catch (e) {}
+    } else {
+      state.medicines = loadMedicinesLocal() || [];
+    }
+    render();
+    maybeNotify();
+  }
+
+  function sampleData() {
+    return [
+      { id: makeId(), name: 'Paracetamol 500mg', category: 'tablet', quantity: '8 tablets left', expiryDate: addDays(-37), notes: '' },
+      { id: makeId(), name: 'ORS Rehydration Sachets', category: 'other', quantity: '3 sachets', expiryDate: addDays(-11), notes: '' },
+      { id: makeId(), name: 'Amoxicillin 250mg', category: 'tablet', quantity: '6 capsules', expiryDate: addDays(4), notes: 'Finish full course once opened' },
+      { id: makeId(), name: 'Cough Syrup', category: 'syrup', quantity: 'Half bottle', expiryDate: addDays(14), notes: '' },
+      { id: makeId(), name: 'Antacid Suspension', category: 'syrup', quantity: '1 bottle', expiryDate: addDays(27), notes: '' },
+      { id: makeId(), name: 'Betadine Antiseptic Ointment', category: 'ointment', quantity: '1 tube', expiryDate: addDays(70), notes: '' },
+      { id: makeId(), name: 'Insulin Pen', category: 'injection', quantity: '1 pen — keep refrigerated', expiryDate: addDays(10), notes: '' },
+      { id: makeId(), name: 'Moisturizing Eye Drops', category: 'drops', quantity: '1 bottle', expiryDate: addDays(115), notes: '' },
+      { id: makeId(), name: 'Vitamin D3 Tablets', category: 'tablet', quantity: '20 tablets', expiryDate: addDays(180), notes: '' },
+      { id: makeId(), name: 'Cold & Flu Tablets', category: 'tablet', quantity: '10 tablets', expiryDate: addDays(95), notes: '' },
+      { id: makeId(), name: 'Digene Gel', category: 'ointment', quantity: 'Half tube', expiryDate: addDays(9), notes: '' },
+      { id: makeId(), name: 'Ear Drops', category: 'drops', quantity: '1 bottle', expiryDate: addDays(-112), notes: '' },
+      { id: makeId(), name: 'Multivitamin Syrup', category: 'syrup', quantity: '1 bottle', expiryDate: addDays(220), notes: '' },
+      { id: makeId(), name: 'Antiseptic Cream', category: 'ointment', quantity: '1 tube', expiryDate: addDays(1), notes: '' },
+      { id: makeId(), name: 'Amlodipine 5mg (BP tablets)', category: 'tablet', quantity: '14 tablets', expiryDate: addDays(21), notes: 'Daily dose — do not skip' }
+    ];
+  }
+
+  function loadSampleDataIntoState() {
+    state.medicines = sampleData();
+    persist();
+  }
+
+  /* ---------- rendering ---------- */
+
+  function applyFiltersAndSort(list) {
+    var q = state.filters.search.trim().toLowerCase();
+    return list
+      .filter(function (m) { return state.filters.status === 'all' || getStatus(m.expiryDate) === state.filters.status; })
+      .filter(function (m) { return state.filters.category === 'all' || m.category === state.filters.category; })
+      .filter(function (m) { return !q || m.name.toLowerCase().indexOf(q) !== -1 || (m.notes || '').toLowerCase().indexOf(q) !== -1; })
+      .slice()
+      .sort(function (a, b) { return a.expiryDate < b.expiryDate ? -1 : a.expiryDate > b.expiryDate ? 1 : 0; });
+  }
+
+  function renderStats() {
+    var total = state.medicines.length, expired = 0, warning = 0, safe = 0;
+    state.medicines.forEach(function (m) {
+      var s = getStatus(m.expiryDate);
+      if (s === 'expired') expired++; else if (s === 'warning') warning++; else safe++;
+    });
+    els.statTotal.textContent = total;
+    els.statExpired.textContent = expired;
+    els.statWarning.textContent = warning;
+    els.statSafe.textContent = safe;
+  }
+
+  function alertText(expiredCount, warningCount) {
+    var parts = [];
+    if (expiredCount) parts.push(expiredCount + ' expired');
+    if (warningCount) parts.push(warningCount + ' expiring soon');
+    var total = expiredCount + warningCount;
+    return total + ' medicine' + (total !== 1 ? 's' : '') + ' need' + (total === 1 ? 's' : '') + ' attention: ' + parts.join(', ') + '.';
+  }
+
+  function renderAlert() {
+    var expired = 0, warning = 0;
+    state.medicines.forEach(function (m) {
+      var s = getStatus(m.expiryDate);
+      if (s === 'expired') expired++; else if (s === 'warning') warning++;
+    });
+    if (expired + warning === 0) { els.alertBanner.hidden = true; return; }
+    els.alertBanner.hidden = false;
+    els.alertBanner.classList.toggle('amber-tone', expired === 0);
+    els.alertBanner.innerHTML = '<span class="alert-text">' + alertText(expired, warning) + '</span>' +
+      '<button type="button" class="link-btn" id="alertReviewBtn">Review</button>';
+    var btn = $('alertReviewBtn');
+    if (btn) btn.addEventListener('click', function () {
+      var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      els.listSection.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'start' });
+    });
+  }
+
+  function medicineRowHTML(m) {
+    var status = getStatus(m.expiryDate);
+    var days = daysUntil(m.expiryDate);
+    var cat = CATEGORIES[m.category] || CATEGORIES.other;
+    var thumb = m.photo
+      ? '<img src="' + m.photo + '" alt="">'
+      : '<span aria-hidden="true">' + cat.emoji + '</span>';
+    return '' +
+      '<article class="row status-' + status + '" data-id="' + m.id + '">' +
+        '<div class="row-thumb">' + thumb + '</div>' +
+        '<div class="row-main">' +
+          '<h3 class="row-name">' + escapeHtml(m.name) + '</h3>' +
+          '<div class="row-meta">' +
+            '<span class="tag">' + cat.label + '</span>' +
+            (m.quantity ? '<span class="row-qty">' + escapeHtml(m.quantity) + '</span>' : '') +
+          '</div>' +
+          (m.notes ? '<p class="row-notes">' + escapeHtml(m.notes) + '</p>' : '') +
+        '</div>' +
+        '<div class="row-expiry">' +
+          '<span class="row-date">' + formatDate(m.expiryDate) + '</span>' +
+          '<span class="row-days badge-' + status + '">' + formatDaysLabel(days) + '</span>' +
+        '</div>' +
+        '<div class="row-actions">' +
+          '<button type="button" data-action="edit" data-id="' + m.id + '" aria-label="Edit ' + escapeHtml(m.name) + '">✏️</button>' +
+          '<button type="button" data-action="delete" data-id="' + m.id + '" aria-label="Delete ' + escapeHtml(m.name) + '">🗑️</button>' +
+        '</div>' +
+      '</article>';
+  }
+
+  function emptyStateHTML(isFilterEmpty) {
+    if (isFilterEmpty) {
+      return '<div class="empty-inner"><p>No medicines match your search or filters.</p></div>';
+    }
+    return '' +
+      '<div class="empty-inner">' +
+        '<p>Your medicine box is empty.</p>' +
+        '<div class="empty-actions">' +
+          '<button type="button" class="btn primary" id="emptyAddBtn">Add a medicine</button>' +
+          '<button type="button" class="btn ghost" id="emptySampleBtn">Load sample box</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  function renderList(filtered) {
+    if (state.medicines.length === 0) {
+      els.emptyState.hidden = false;
+      els.emptyState.innerHTML = emptyStateHTML(false);
+      els.list.innerHTML = '';
+      var a = $('emptyAddBtn'); if (a) a.addEventListener('click', function () { openModal(); });
+      var s = $('emptySampleBtn'); if (s) s.addEventListener('click', function () { loadSampleDataIntoState(); render(); toast('Sample medicines loaded.'); });
+      return;
+    }
+    if (filtered.length === 0) {
+      els.emptyState.hidden = false;
+      els.emptyState.innerHTML = emptyStateHTML(true);
+      els.list.innerHTML = '';
+      return;
+    }
+    els.emptyState.hidden = true;
+    els.list.innerHTML = filtered.map(medicineRowHTML).join('');
+  }
+
+  function render() {
+    var filtered = applyFiltersAndSort(state.medicines);
+    renderStats();
+    renderAlert();
+    renderList(filtered);
+  }
+
+  function flashRow(id) {
+    var el = document.querySelector('.row[data-id="' + id + '"]');
+    if (!el) return;
+    el.classList.add('just-changed');
+    setTimeout(function () { el.classList.remove('just-changed'); }, 1400);
+  }
+
+  /* ---------- overlays ---------- */
+
+  function showOverlay(el) {
+    el.hidden = false;
+    requestAnimationFrame(function () { el.classList.add('open'); });
+    document.body.style.overflow = 'hidden';
+  }
+  function hideOverlay(el) {
+    el.classList.remove('open');
+    document.body.style.overflow = '';
+    setTimeout(function () { el.hidden = true; }, 200);
+  }
+
+  function openConfirm(message, onConfirm) {
+    els.confirmText.textContent = message;
+    confirmCallback = onConfirm;
+    showOverlay(els.confirmOverlay);
+  }
+
+  /* ---------- toast ---------- */
+
+  function toast(msg) {
+    els.toast.textContent = msg;
+    els.toast.hidden = false;
+    requestAnimationFrame(function () { els.toast.classList.add('show'); });
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      els.toast.classList.remove('show');
+      setTimeout(function () { els.toast.hidden = true; }, 250);
+    }, 2400);
+  }
+
+  /* ---------- modal (add/edit) ---------- */
+
+  function renderPhotoPreview() {
+    if (state.pendingPhoto) {
+      els.photoPreview.innerHTML = '<img src="' + state.pendingPhoto + '" alt="">';
+      els.removePhotoBtn.hidden = false;
+    } else {
+      els.photoPreview.innerHTML = '<span class="photo-placeholder">No photo</span>';
+      els.removePhotoBtn.hidden = true;
+    }
+  }
+
+  function openModal(id) {
+    state.editingId = id || null;
+    var m = id ? state.medicines.find(function (x) { return x.id === id; }) : null;
+    els.modalTitle.textContent = m ? 'Edit medicine' : 'Add medicine';
+    els.medName.value = m ? m.name : '';
+    els.medCategory.value = m ? m.category : 'tablet';
+    els.medQuantity.value = m ? (m.quantity || '') : '';
+    els.medExpiry.value = m ? m.expiryDate : '';
+    els.medNotes.value = m ? (m.notes || '') : '';
+    state.pendingPhoto = m ? (m.photo || null) : null;
+    els.medPhotoInput.value = '';
+    renderPhotoPreview();
+    els.saveBtnText.textContent = m ? 'Save changes' : 'Add medicine';
+    showOverlay(els.modalOverlay);
+    setTimeout(function () { els.medName.focus(); }, 60);
+  }
+  function closeModal() {
+    hideOverlay(els.modalOverlay);
+    state.editingId = null;
+  }
+
+  function onSubmitMedicine(e) {
+    e.preventDefault();
+    var name = els.medName.value.trim();
+    var expiryDate = els.medExpiry.value;
+    if (!name || !expiryDate) { toast('Add a name and expiry date to continue.'); return; }
+    var wasEditing = Boolean(state.editingId);
+    var payload = {
+      name: name,
+      expiryDate: expiryDate,
+      category: els.medCategory.value,
+      quantity: els.medQuantity.value.trim(),
+      notes: els.medNotes.value.trim(),
+      photo: state.pendingPhoto || null
+    };
+    var id;
+    if (wasEditing) {
+      id = state.editingId;
+      var idx = state.medicines.findIndex(function (x) { return x.id === id; });
+      if (idx > -1) state.medicines[idx] = Object.assign({}, state.medicines[idx], payload);
+    } else {
+      id = makeId();
+      payload.id = id;
+      state.medicines.push(payload);
+    }
+    persist();
+    closeModal();
+    render();
+    requestAnimationFrame(function () { flashRow(id); });
+    maybeNotify(true);
+    toast(wasEditing ? 'Medicine updated.' : 'Medicine added.');
+  }
+
+  function resizeImageToDataUrl(file, maxDim) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onerror = function () { reject(new Error('read failed')); };
+      reader.onload = function (e) {
+        var img = new Image();
+        img.onerror = function () { reject(new Error('image failed')); };
+        img.onload = function () {
+          var width = img.width, height = img.height;
+          if (width > height && width > maxDim) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+          else if (height > maxDim) { width = Math.round(width * (maxDim / height)); height = maxDim; }
+          var canvas = document.createElement('canvas');
+          canvas.width = width; canvas.height = height;
+          canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.72));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function onPhotoChange(e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    resizeImageToDataUrl(file, 220).then(function (dataUrl) {
+      state.pendingPhoto = dataUrl;
+      renderPhotoPreview();
+    }).catch(function () { toast('Could not read that photo.'); });
+  }
+  function onRemovePhoto() {
+    state.pendingPhoto = null;
+    els.medPhotoInput.value = '';
+    renderPhotoPreview();
+  }
+
+  /* ---------- list actions ---------- */
+
+  function removeMedicine(id) {
+    state.medicines = state.medicines.filter(function (m) { return m.id !== id; });
+    persist();
+    render();
+    toast('Medicine removed.');
+  }
+
+  function onListClick(e) {
+    var btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    var id = btn.dataset.id;
+    var m = state.medicines.find(function (x) { return x.id === id; });
+    if (btn.dataset.action === 'edit') openModal(id);
+    else if (btn.dataset.action === 'delete') {
+      openConfirm((m ? m.name : 'This medicine') + ' will be removed from your medicine box.', function () { removeMedicine(id); });
+    }
+  }
+
+  /* ---------- filters ---------- */
+
+  function onSearchInput() { state.filters.search = els.searchInput.value; render(); }
+  function onCategoryChange() { state.filters.category = els.categoryFilter.value; render(); }
+  function onChipClick(e) {
+    var btn = e.target.closest('.chip');
+    if (!btn) return;
+    state.filters.status = btn.dataset.status;
+    els.statusChips.querySelectorAll('.chip').forEach(function (c) { c.classList.toggle('active', c === btn); });
+    render();
+  }
+
+  /* ---------- settings ---------- */
+
+  function openSettings() {
+    els.thresholdInput.value = state.settings.thresholdDays;
+    showOverlay(els.settingsOverlay);
+  }
+  function saveSettingsAndClose() {
+    var val = parseInt(els.thresholdInput.value, 10);
+    if (!isNaN(val) && val > 0 && val <= 365) { state.settings.thresholdDays = val; persist(); }
+    hideOverlay(els.settingsOverlay);
+    render();
+  }
+  function onLoadSample() {
+    hideOverlay(els.settingsOverlay);
+    loadSampleDataIntoState();
+    render();
+    toast('Sample medicines loaded.');
+  }
+  function onClearAll() {
+    els.settingsOverlay.classList.remove('open');
+    els.settingsOverlay.hidden = true;
+    openConfirm('This removes every medicine in your box. This cannot be undone.', function () {
+      state.medicines = [];
+      persist();
+      render();
+      toast('All medicines cleared.');
+    });
+  }
+
+  /* ---------- theme ---------- */
+
+  function currentEffectiveTheme() {
+    var attr = document.documentElement.getAttribute('data-theme');
+    if (attr) return attr;
+    return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  function updateThemeBtn() {
+    var eff = currentEffectiveTheme();
+    els.themeBtn.innerHTML = eff === 'dark' ? ICON_MOON : ICON_SUN;
+    var label = 'Switch to ' + (eff === 'dark' ? 'light' : 'dark') + ' theme';
+    els.themeBtn.title = label;
+    els.themeBtn.setAttribute('aria-label', label);
+  }
+  function applyStoredTheme() {
+    var pref = null;
+    try { pref = localStorage.getItem(LS_THEME); } catch (e) {}
+    if (pref === 'light' || pref === 'dark') document.documentElement.setAttribute('data-theme', pref);
+    updateThemeBtn();
+  }
+  function toggleTheme() {
+    var next = currentEffectiveTheme() === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try { localStorage.setItem(LS_THEME, next); } catch (e) {}
+    updateThemeBtn();
+  }
+
+  /* ---------- notifications ---------- */
+
+  function updateNotifyBtn() {
+    if (!('Notification' in window)) { els.notifyBtn.style.display = 'none'; return; }
+    var granted = Notification.permission === 'granted';
+    els.notifyBtn.textContent = granted ? '🔔' : '🔕';
+    var label = granted ? 'Browser reminders on' : 'Turn on browser reminders';
+    els.notifyBtn.title = label;
+    els.notifyBtn.setAttribute('aria-label', label);
+  }
+  function onNotifyClick() {
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') { toast('Reminders are already on.'); maybeNotify(true); return; }
+    if (Notification.permission === 'denied') { toast('Reminders are blocked in your browser settings.'); return; }
+    Notification.requestPermission().then(function (perm) {
+      updateNotifyBtn();
+      if (perm === 'granted') { toast('Reminders turned on.'); maybeNotify(true); }
+      else toast('Reminders stay off until you allow them.');
+    });
+  }
+  function maybeNotify(force) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    var urgent = state.medicines.filter(function (m) {
+      var s = getStatus(m.expiryDate);
+      return s === 'expired' || s === 'warning';
+    });
+    if (urgent.length === 0) return;
+    var last = null;
+    try { last = localStorage.getItem(LS_NOTIFY_DATE); } catch (e) {}
+    var todayStr = toLocalISODate(new Date());
+    if (!force && last === todayStr) return;
+    try {
+      new Notification('MediBox reminder', { body: urgent.length + ' medicine' + (urgent.length !== 1 ? 's' : '') + ' in your box need attention.' });
+      localStorage.setItem(LS_NOTIFY_DATE, todayStr);
+    } catch (e) {}
+  }
+
+  /* ---------- keyboard ---------- */
+
+  function onKeydown(e) {
+    if (e.key !== 'Escape') return;
+    if (!els.modalOverlay.hidden) closeModal();
+    else if (!els.confirmOverlay.hidden) hideOverlay(els.confirmOverlay);
+    else if (!els.settingsOverlay.hidden) hideOverlay(els.settingsOverlay);
+  }
+
+  /* ---------- wire up ---------- */
+
+  function bindEvents() {
+    els.themeBtn.addEventListener('click', toggleTheme);
+    els.notifyBtn.addEventListener('click', onNotifyClick);
+    els.settingsBtn.addEventListener('click', openSettings);
+    els.settingsCloseX.addEventListener('click', function () { hideOverlay(els.settingsOverlay); });
+    els.closeSettingsBtn.addEventListener('click', saveSettingsAndClose);
+    els.loadSampleBtn.addEventListener('click', onLoadSample);
+    els.clearAllBtn.addEventListener('click', onClearAll);
+
+    els.addBtn.addEventListener('click', function () { openModal(); });
+    els.modalCloseX.addEventListener('click', closeModal);
+    els.cancelBtn.addEventListener('click', closeModal);
+    els.medForm.addEventListener('submit', onSubmitMedicine);
+    els.medPhotoInput.addEventListener('change', onPhotoChange);
+    els.removePhotoBtn.addEventListener('click', onRemovePhoto);
+
+    els.confirmCancel.addEventListener('click', function () { confirmCallback = null; hideOverlay(els.confirmOverlay); });
+    els.confirmDelete.addEventListener('click', function () { if (confirmCallback) confirmCallback(); hideOverlay(els.confirmOverlay); });
+
+    els.searchInput.addEventListener('input', onSearchInput);
+    els.categoryFilter.addEventListener('change', onCategoryChange);
+    els.statusChips.addEventListener('click', onChipClick);
+    els.list.addEventListener('click', onListClick);
+
+    els.confirmOverlay.addEventListener('click', function (e) { if (e.target === els.confirmOverlay) hideOverlay(els.confirmOverlay); });
+    els.settingsOverlay.addEventListener('click', function (e) { if (e.target === els.settingsOverlay) hideOverlay(els.settingsOverlay); });
+    els.modalOverlay.addEventListener('click', function (e) { if (e.target === els.modalOverlay) closeModal(); });
+
+    document.addEventListener('keydown', onKeydown);
+  }
+
+  function init() {
+    cacheEls();
+    applyStoredTheme();
+    updateNotifyBtn();
+    bindEvents();
+    showInitialLoading();
+
+    initCloud().then(function (isCloud) {
+      if (isCloud) {
+        renderIdentityBadge('cloud');
+        startCloudSubscription();
+      } else {
+        renderIdentityBadge('local');
+        loadLocalAndRender();
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();
+</script>
+</body>
+</html>
